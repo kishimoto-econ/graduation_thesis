@@ -1,0 +1,823 @@
+\RequirePackage{plautopatch}
+\RequirePackage[l2tabu, orthodox]{nag}
+
+\documentclass[dvipdfmx]{jlreq}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+\title{
+\vspace{-3cm}
+モデルの修正（再帰的表現）
+}
+
+\author{
+  岸本康佑
+  \thanks{
+  Email: \texttt{s12102301404@toyo.jp}, \texttt{kishimoto.research@gmail.com} \\
+  GitHub: \url{https://github.com/Kishimoto-econ}
+}}
+\date{2026.6.8}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+%本文開始
+\section{モデルの全体像}
+\begin{gather}
+  q_t(k_t - k_{t-1}) + \frac{1}{\beta^\prime} b_{t-1} + x_t - c k_{t-1} = a k_{t-1} + b_t \label{eq:1} \\
+  b_t \leq \beta\prime q_{t+1} k_t (1+\varepsilon_t) \label{eq:2} \\
+  x_t \geq c k_{t-1} \label{eq:3} \\
+  1 + \varphi_t = (\beta(1+\varphi_{t+1}) + \mu_t) \frac{1}{\beta^\prime} \label{eq:4} \\
+  q_t (1 + \varphi_t) + \beta c \varphi_{t+1} = \beta (1 + \varphi_{t+1})[a + c + q_{t+1}] + \mu_t q_{t+1} (1+\varepsilon_t) \label{eq:5} \\
+  q_t = \beta^\prime [G^\prime(k^\prime_t) + q_{t+1}] \label{eq:6} \\
+  x_t + m x^\prime_t = (a + c) k_{t-1} + m G(k^\prime_{t-1}) \label{eq:7} \\
+  k_t + m k^\prime_t = \bar{K} \label{eq:8}
+\end{gather}
+8本の方程式，8個の変数，6個のパラメータを持つKiyotaki-Mooreモデルが導出された．
+
+ただし，
+\begin{equation}
+  b_t + m b^\prime_t = 0
+\end{equation}
+とし，\eqref{eq:7}式は総生産量であり$Y_t$とおく．
+また$\bar{K}$は定数である．\eqref{eq:7}式，\eqref{eq:8}式は均衡条件式である．
+
+\begin{itemize}
+  \item \textbf{変数} \\
+    $k$：Farmerが保有する不動産，$k^\prime$：Gathererが保有する不動産， \\
+    $x$：Farmerの消費，$x^\prime$：Gathererの消費， \\
+    $ak$：Farmerの取引可能な生産物，$ck$：Gathererの取引不可能だが自家消費可能な生産物， \\
+    $b$：Farmerの借入金（Gathererの貸出金），$q$：不動産価格
+  \item \textbf{ショック項} \\
+    $\varepsilon$：総量規制ショック
+  \item \textbf{関数} \\
+    $G(k^\prime)$：Gathererの生産関数（分析では$G(k^\prime)=(z+k^\prime)^\alpha$のコブ・ダグラス型）
+  \item \textbf{パラメータ} \\
+    $\beta$：Farmerの割引率，$\beta^\prime$：Gathererの割引率
+  \item \textbf{定数} \\
+    $\bar{K}$：不動産の総量，$m$：FarmerとGatherの割合
+  \item \textbf{ラグランジュ乗数} \\
+    $\mu$：借入制約，$\varphi$：自家消費制約
+\end{itemize}
+※ダッシュ記号「'」が付いているものはGatherer関連である．
+
+
+\section{対数線形近似}
+ある変数$Z$を$\widetilde{Z} = \ln{Z} \ \Leftrightarrow \ \exp{\widetilde{Z}} = Z$のように対数変換し，定常状態周りで1次のテイラー展開を行う．
+ただし，ラグランジュ乗数$z$については，$\widetilde{Z} = Z - Z^*$のようにレベルで変数変換する．
+$ss$は定常状態，$\widehat{Z}$は$\widetilde{Z}$と$Z$の定常値$Z^*$との対数差分（すなわち$\ln(Z) - \ln(Z^*)$）である．
+もちろん，対数，およびレベル線形化後の内生変数の定常状態での値は，全てゼロである。
+
+\begin{itemize}
+  \item \eqref{eq:1}式：$q_t(k_t - k_{t-1}) + \frac{1}{\beta^\prime} b_{t-1} + x_t - c k_{t-1} = a k_{t-1} + b_t$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(q_t, k_t, k_{t-1}, b_{t-1}, x_t) = q_t(k_t - k_{t-1}) + \frac{1}{\beta^\prime} b_{t-1} + x_t - c k_{t-1} \\
+      g(k_{t-1}, b_t) = a k_{t-1} + b_t
+    \end{gather}
+    とおき，変数を対数変換すると，
+    \begin{equation}
+      \begin{split}
+        f(\widetilde{q}_t, \widetilde{k}_t, \widetilde{k}_{t-1}, &\widetilde{b}_{t-1}, \widetilde{x}_t) \\
+        =& \exp(\widetilde{q}_t) (\exp(\widetilde{k}_t) - \exp(\widetilde{k}_{t-1})) + \frac{1}{\beta^\prime} \exp(\widetilde{b}_{t-1}) + \exp(\widetilde{x}_t) - c \exp(\widetilde{k}_{t-1}) 
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      g(\widetilde{k}_{t-1}, \widetilde{b}_t) = a \exp(\widetilde{k}_{t-1}) + \exp(\widetilde{b}_t)
+    \end{equation}
+    となる．次に，定常状態周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f \approx& f(ss)
+        + \frac{\partial f}{\partial \widetilde{q}_t} \bigg|_{ss} (\widetilde{q}_t - \widetilde{q}^*)
+        + \frac{\partial f}{\partial \widetilde{k}_t} \bigg|_{ss} (\widetilde{k}_t - \widetilde{k}^*)
+        + \frac{\partial f}{\partial \widetilde{k}_{t-1}} \bigg|_{ss} (\widetilde{k}_{t-1} - \widetilde{k}^*) \\
+        &+ \frac{\partial f}{\partial \widetilde{b}_{t-1}} \bigg|_{ss} (\widetilde{b}_{t-1} - \widetilde{b}^*)
+        + \frac{\partial f}{\partial \widetilde{x}_t} \bigg|_{ss} (\widetilde{x}_t - \widetilde{x}^*) \\
+        =& \frac{1}{\beta^\prime} b^* + x^* - c k^*
+        + q^* k^* \widehat{k}_t
+        - (q^* k^* + c k^*) \widehat{k}_{t-1}
+        + \frac{b^*}{\beta^\prime} \widehat{b}_{t-1}
+        + x^* \widehat{x}_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g \approx& g(ss)
+        + \frac{\partial g}{\partial \widetilde{k}_{t-1}} \bigg|_{ss} (\widetilde{k}_{t-1} - \widetilde{k}^*)
+        + \frac{\partial g}{\partial \widetilde{b}_t} \bigg|_{ss} (\widetilde{b}_t - \widetilde{b}^*) \\
+        =& a k^* + b^*
+        + a k^* \widehat{k}_{t-1}
+        + b^* \widehat{b}_t
+      \end{split}
+    \end{equation}
+    となる．$f=g$および定常状態の条件$\frac{1}{\beta^\prime} b^* + x^* - c k^* = a k^* + b^*$より，
+    \begin{equation}
+      q^* k^* \widehat{k}_t + \frac{b^*}{\beta^\prime} \widehat{b}_{t-1} + x^* \widehat{x}_t
+      = (q^* k^* + c k^* + a k^*) \widehat{k}_{t-1} + b^* \widehat{b}_t
+    \end{equation}
+    これが，\eqref{eq:1}式の対数線形近似である．
+  
+  \item \eqref{eq:2}式：$b_t = \beta\prime q_{t+1} k_t (1+\varepsilon_t)$（bindingと仮定した） \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(b_t) = b_t \\
+      g(q_{t+1}, k_t) = \beta^\prime q_{t+1} k_t (1+\varepsilon_t)
+    \end{gather}
+    とおき，変数を対数変換すると，
+    \begin{gather}
+      f(\widetilde{b}_t) = \exp(\widetilde{b}_t) \\
+      g(\widetilde{q}_{t+1}, \widetilde{k}_t) = \beta^\prime \exp(\widetilde{q}_{t+1}) \exp(\widetilde{k}_t) (1+\varepsilon_t)
+    \end{gather}
+    となる．定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{b}_t} \bigg|_{ss} (\widetilde{b}_t - \widetilde{b}^*) \\
+        &= b^* + b^* \widehat{b}_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g &\approx g(ss) + \frac{\partial g}{\partial \widetilde{q}_{t+1}} \bigg|_{ss} (\widetilde{q}_{t+1} - \widetilde{q}^*) + \frac{\partial g}{\partial \widetilde{k}_t} \bigg|_{ss} (\widetilde{k}_t - \widetilde{k}^*) + \frac{\partial g}{\partial \varepsilon_t} \bigg|_{ss} (\widetilde{\varepsilon}_t - \widetilde{\varepsilon}^*) \\
+        &= \beta^\prime q^* k^* + \beta^\prime q^* k^* \widehat{q}_{t+1} + \beta^\prime q^* k^* \widehat{k}_t + \beta^\prime q^* k^* \varepsilon_t
+      \end{split}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件 $b^* = \beta^\prime q^* k^*$ より，
+    \begin{equation}
+      \widehat{b}_t = \widehat{q}_{t+1} + \widehat{k}_t + \varepsilon_t
+    \end{equation}
+    これが、\eqref{eq:2}式の対数線形近似である．
+
+  \item \eqref{eq:3}式：$x_t = c k_{t-1}$（bindingと仮定した） \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(x_t) = x_t \\
+      g(k_{t-1}) = c k_{t-1}
+    \end{gather}
+    とおき，変数を対数変換すると，
+    \begin{gather}
+      f(\widetilde{x}_t) = \exp(\widetilde{x}_t) \\
+      g(\widetilde{k}_{t-1}) = c \exp(\widetilde{k}_{t-1})
+    \end{gather}
+    となる．定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{x}_t} \bigg|_{ss} (\widetilde{x}_t - \widetilde{x}^*) \\
+        &= x^* + x^* \widehat{x}_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g &\approx g(ss) + \frac{\partial g}{\partial \widetilde{k}_{t-1}} \bigg|_{ss} (\widetilde{k}_{t-1} - \widetilde{k}^*) \\
+        &= c k^* + c k^* \widehat{k}_{t-1}
+      \end{split}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件 $x^* = c k^*$ より，
+    \begin{equation}
+      \widehat{x}_t = \widehat{k}_{t-1}
+    \end{equation}
+    これが，\eqref{eq:3}式の対数線形近似である．
+
+  \item \eqref{eq:4}式：$1 + \varphi_t = (\beta(1+\varphi_{t+1}) + \mu_t) \frac{1}{\beta^\prime}$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(\varphi_t) = 1 + \varphi_t \\
+      g(\varphi_{t+1}, \mu_t) = \frac{\beta}{\beta^\prime} (1 + \varphi_{t+1}) + \frac{1}{\beta^\prime} \mu_t
+    \end{gather}
+    とおき，変数変換すると，
+    \begin{gather}
+      f(\widetilde{\varphi}_t) = 1 + \widetilde{\varphi}_t + \varphi^* \\
+      g(\widetilde{\varphi}_{t+1}, \widetilde{\mu}_t) = \frac{\beta}{\beta^\prime} (1 + \widetilde{\varphi}_{t+1} + \varphi^*) + \frac{1}{\beta^\prime} (\widetilde{\mu}_t + \mu^*)
+    \end{gather}
+    となる．$f=g$ および定常状態の条件 $1 + \varphi^* = \frac{\beta}{\beta^\prime} (1 + \varphi^*) + \frac{1}{\beta^\prime} \mu^*$ より，
+    \begin{equation}
+      \widetilde{\varphi}_t = \frac{\beta}{\beta^\prime} \widetilde{\varphi}_{t+1} + \frac{1}{\beta^\prime} \widetilde{\mu}_t
+    \end{equation}
+    これが，\eqref{eq:4}式の線形近似である．
+
+  \item \eqref{eq:5}式：$q_t (1 + \varphi_t) + \beta c \varphi_{t+1} = \beta (1 + \varphi_{t+1})[a + c + q_{t+1}] + \mu_t q_{t+1} (1+\varepsilon_t)$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(q_t, \varphi_t, \varphi_{t+1}) = q_t (1 + \varphi_t) + \beta c \varphi_{t+1} \\
+      g(\varphi_{t+1}, q_{t+1}, \mu_t) = \beta (1 + \varphi_{t+1})[a + c + q_{t+1}] + \mu_t q_{t+1} (1+\varepsilon_t)
+    \end{gather}
+    とおき，変数を対数，およびレベルで変換すると，
+    \begin{gather}
+      f(\widetilde{q}_t, \widetilde{\varphi}_t, \widetilde{\varphi}_{t+1}) = \exp(\widetilde{q}_t) (1 + \varphi^* + \widetilde{\varphi}_t) + \beta c (\varphi^* + \widetilde{\varphi}_{t+1}) \\
+      g(\widetilde{\varphi}_{t+1}, \widetilde{q}_{t+1}, \widetilde{\mu}_t) = \beta(1 + \varphi^* + \widetilde{\varphi}_{t+1})[a + c + \exp(\widetilde{q}_{t+1})] + (\mu^* + \widetilde{\mu}_t) \exp(\widetilde{q}_{t+1}) (1+\varepsilon_t)
+    \end{gather}
+    となる．定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{q}_t} \bigg|_{ss} (\widetilde{q}_t - \widetilde{q}^*) + \frac{\partial f}{\partial \widetilde{\varphi}_t} \bigg|_{ss} (\widetilde{\varphi}_t - \varphi^*) + \frac{\partial f}{\partial \widetilde{\varphi}_{t+1}} \bigg|_{ss} (\widetilde{\varphi}_{t+1} - \varphi^*) \\
+        &= [q^*(1+\varphi^*) + \beta c \varphi^*] + q^*(1+\varphi^*) \widehat{q}_t + q^* \widetilde{\varphi}_t + \beta c \widetilde{\varphi}_{t+1}
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g &\approx g(ss) + \frac{\partial g}{\partial \widetilde{\varphi}_{t+1}} \bigg|_{ss} (\widetilde{\varphi}_{t+1} - \varphi^*) + \frac{\partial g}{\partial \widetilde{q}_{t+1}} \bigg|_{ss} (\widetilde{\widetilde{q}}_{t+1} - \widetilde{q}^*) + \frac{\partial g}{\partial \widetilde{\mu}_t} \bigg|_{ss} (\widetilde{\mu}_t - \mu^*) + \frac{\partial g}{\partial \varepsilon}_t \bigg|_{ss} (\widetilde{\varepsilon}_t - \varepsilon^*) \\
+        &= [\beta(1+\varphi^*)(a+c+q^*) + \mu^* q^*] + \beta(a+c+q^*) \widetilde{\varphi}_{t+1} + [\beta(1+\varphi^*)q^* + \mu^* q^*] \widehat{q}_{t+1} + q^* \widetilde{\mu}_t + \mu^* q^* \varepsilon_t
+      \end{split}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件$q^*(1+\varphi^*) + \beta c \varphi^* = \beta(1+\varphi^*)(a+c+q^*) + \mu^* q^*$より，
+    \begin{equation}
+      q^*(1+\varphi^*) \widehat{q}_t + q^* \widetilde{\varphi}_t = [\beta(1+\varphi^*) + \mu^*] q^* \widehat{q}_{t+1} + \beta(a+q^*) \widetilde{\varphi}_{t+1} + \mu^* q^* \widetilde{\mu}_t + \mu^* q^* \varepsilon_t
+    \end{equation}
+    これが，\eqref{eq:5}式の対数線形・レベル線形近似である．
+
+  \item \eqref{eq:6}式：$q_t = \beta^\prime [G^\prime(k^\prime_t) + q_{t+1}]$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(q_t) = q_t \\
+      g(k^\prime_t, q_{t+1}) = \beta^\prime [G^\prime(k^\prime_t) + q_{t+1}]
+    \end{gather}
+    とおき，変数を対数変換する．ここで $G^\prime(k^\prime_t) = \alpha(z+k^\prime_t)^{\alpha-1}$ である．
+    \begin{gather}
+      f(\widetilde{q}_t) = \exp(\widetilde{q}_t) \\
+      g(\widetilde{k}^\prime_t, \widetilde{q}_{t+1}) = \beta^\prime [ \alpha(z+\exp(\widetilde{k}^\prime_t))^{\alpha-1} + \exp(\widetilde{q}_{t+1}) ]
+    \end{gather}
+    定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{q}_t} \bigg|_{ss} (\widetilde{q}_t - \widetilde{q}^*) \\
+        &= q^* + q^* \widehat{q}_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g &\approx g(ss) + \frac{\partial g}{\partial \widetilde{k}^\prime_t} \bigg|_{ss} (\widetilde{k}^\prime_t - \widetilde{k}^{\prime *}) + \frac{\partial g}{\partial \widetilde{q}_{t+1}} \bigg|_{ss} (\widetilde{q}_{t+1} - \widetilde{q}^*) \\
+        &= \beta^\prime[G^\prime(k^{\prime *}) + q^*] + \beta^\prime \alpha(\alpha-1)(z+k^{\prime *})^{\alpha-2} k^{\prime *} \widehat{k}^\prime_t + \beta^\prime q^* \widehat{q}_{t+1}
+      \end{split}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件 $q^* = \beta^\prime[G^\prime(k^{\prime *}) + q^*]$ より，
+    \begin{equation}
+      q^* \widehat{q}_t = \beta^\prime \alpha(\alpha-1)(z+k^{\prime *})^{\alpha-2} k^{\prime *} \widehat{k}^\prime_t + \beta^\prime q^* \widehat{q}_{t+1}
+    \end{equation}
+    これが，\eqref{eq:6}式の対数線形近似である．
+
+  \item \eqref{eq:7}式：$x_t + m x^\prime_t = (a + c) k_{t-1} + m G(k^\prime_{t-1})$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(x_t, x^\prime_t) = x_t + m x^\prime_t \\
+      g(k_{t-1}, k^\prime_{t-1}) = (a + c) k_{t-1} + m G(k^\prime_{t-1})
+    \end{gather}
+    とおき，変数を対数変換する．ここで $G(k^\prime_{t-1}) = (z+k^\prime_{t-1})^\alpha$ である．
+    \begin{gather}
+      f(\widetilde{x}_t, \widetilde{x}^\prime_t) = \exp(\widetilde{x}_t) + m \exp(\widetilde{x}^\prime_t) \\
+      g(\widetilde{k}_{t-1}, \widetilde{k}^\prime_{t-1}) = (a + c) \exp(\widetilde{k}_{t-1}) + m (z+\exp(\widetilde{k}^\prime_{t-1}))^\alpha
+    \end{gather}
+    定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{x}_t} \bigg|_{ss} (\widetilde{x}_t - \widetilde{x}^*) + \frac{\partial f}{\partial \widetilde{x}^\prime_t} \bigg|_{ss} (\widetilde{x}^\prime_t - \widetilde{x}^{\prime *}) \\
+        &= (x^* + m x^{\prime *}) + x^* \widehat{x}_t + m x^{\prime *} \widehat{x}^\prime_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      \begin{split}
+        g &\approx g(ss) + \frac{\partial g}{\partial \widetilde{k}_{t-1}} \bigg|_{ss} (\widetilde{k}_{t-1} - \widetilde{k}^*) + \frac{\partial g}{\partial \widetilde{k}^\prime_{t-1}} \bigg|_{ss} (\widetilde{k}^\prime_{t-1} - \widetilde{k}^{\prime *}) \\
+        &= [(a+c)k^* + m G(k^{\prime *})] + (a+c)k^* \widehat{k}_{t-1} + m \alpha(z+k^{\prime *})^{\alpha-1} k^{\prime *} \widehat{k}^\prime_{t-1}
+      \end{split}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件 $x^* + m x^{\prime *} = (a+c)k^* + m G(k^{\prime *})$ より，
+    \begin{equation}
+      x^* \widehat{x}_t + m x^{\prime *} \widehat{x}^\prime_t = (a+c)k^* \widehat{k}_{t-1} + m \alpha(z+k^{\prime *})^{\alpha-1} k^{\prime *} \widehat{k}^\prime_{t-1}
+    \end{equation}
+    これが，\eqref{eq:7}式の対数線形近似である．
+
+  \item \eqref{eq:8}式：$k_t + m k^\prime_t = \bar{K}$ \\
+    左辺と右辺を，それぞれ
+    \begin{gather}
+      f(k_t, k^\prime_t) = k_t + m k^\prime_t \\
+      g(\bar{K}) = \bar{K}
+    \end{gather}
+    とおき，変数を対数変換すると，
+    \begin{gather}
+      f(\widetilde{k}_t, \widetilde{k}^\prime_t) = \exp(\widetilde{k}_t) + m \exp(\widetilde{k}^\prime_t) \\
+      g(\bar{K}) = \bar{K}
+    \end{gather}
+    となる．定常状態の周りでテイラー展開を行うと，
+    \begin{equation}
+      \begin{split}
+        f &\approx f(ss) + \frac{\partial f}{\partial \widetilde{k}_t} \bigg|_{ss} (\widetilde{k}_t - \widetilde{k}^*) + \frac{\partial f}{\partial \widetilde{k}^\prime_t} \bigg|_{ss} (\widetilde{k}^\prime_t - \widetilde{k}^{\prime *}) \\
+        &= (k^* + m k^{\prime *}) + k^* \widehat{k}_t + m k^{\prime *} \widehat{k}^\prime_t
+      \end{split}
+    \end{equation}
+    \begin{equation}
+      g \approx \bar{K}
+    \end{equation}
+    となる．$f=g$ および定常状態の条件 $k^* + m k^{\prime *} = \bar{K}$ より，
+    \begin{equation}
+      k^* \widehat{k}_t + m k^{\prime *} \widehat{k}^\prime_t = 0
+    \end{equation}
+    これが，\eqref{eq:8}式の対数線形近似である．
+\end{itemize}
+
+\subsection*{対数線形近似したモデルの全体像}
+\begin{gather}
+  q^* k^* \widehat{k}_t + \frac{b^*}{\beta^\prime} \widehat{b}_{t-1} + x^* \widehat{x}_t = (q^* k^* + c k^* + a k^*) \widehat{k}_{t-1} + b^* \widehat{b}_t \\
+  \widehat{b}_t = \widehat{q}_{t+1} + \widehat{k}_t + \varepsilon_t \\
+  \widehat{x}_t = \widehat{k}_{t-1} \\
+  \widetilde{\varphi}_t = \frac{\beta}{\beta^\prime} \widetilde{\varphi}_{t+1} + \frac{1}{\beta^\prime} \widetilde{\mu}_t \\
+  q^*(1+\varphi^*) \widehat{q}_t + q^* \widetilde{\varphi}_t = [\beta(1+\varphi^*) + \mu^*] q^* \widehat{q}_{t+1} + \beta(a+q^*) \widetilde{\varphi}_{t+1} + \mu^* q^* \widetilde{\mu}_t + \mu^* q^* \varepsilon_t \\
+  q^* \widehat{q}_t = \beta^\prime \alpha(\alpha-1)(z+k^{\prime *})^{\alpha-2} k^{\prime *} \widehat{k}^\prime_t + \beta^\prime q^* \widehat{q}_{t+1} \\
+  x^* \widehat{x}_t + m x^{\prime *} \widehat{x}^\prime_t = (a+c)k^* \widehat{k}_{t-1} + m \alpha(z+k^{\prime *})^{\alpha-1} k^{\prime *} \widehat{k}^\prime_{t-1} \\
+  k^* \widehat{k}_t + m k^{\prime *} \widehat{k}^\prime_t = 0
+\end{gather}
+
+\section{モデルの再帰的表現}
+モデルのジャンプ変数は $\widehat{q}_t, \widetilde{\varphi}_t$ の2変数，状態変数は $\widehat{k}_t, \widehat{b}_t$ の3変数である\footnote{本章の記述の多くは蓮見（2020，第6章）と外木先生のレジュメを参考にした．}．
+
+状態変数の種類はDynareのコマンドで確認することができるが，ジャンプ変数については個数しか確認できない（私が知らないだけかもしれない）．
+$\widehat{x}_t, \widehat{x}^\prime_t, \widehat{k}_t^\prime, \widetilde{\mu}_t$ が静的変数である理由は，これらの変数が他の変数の値によって自動的に（フォワードでもバックワードでもなく）決定されるからである．
+
+モデルの方程式を整理すると，以下の5本の連立差分方程式に集約できる．
+\begin{gather}
+    q^* k^* \widehat{k}_t + \frac{b^*}{\beta^\prime} \widehat{b}_{t-1} + x^* \widehat{k}_{t-1} = (q^* k^* + c k^* + a k^*) \widehat{k}_{t-1} + b^* \widehat{b}_t \\
+  \widehat{b}_t = \widehat{q}_{t+1} + \widehat{k}_t + \varepsilon_t \\
+  q^*(1+\varphi^*) \widehat{q}_t - (\mu^* \beta^\prime - 1)q^* \widetilde{\varphi}_t = [\beta(1+\varphi^*) + \mu^*] q^* \widehat{q}_{t+1} + \beta(a+q^* - \mu^* q^* \beta^\prime) \widetilde{\varphi}_{t+1} + \mu^* q^* \varepsilon_t \\
+  q^* \widehat{q}_t = \beta^\prime \alpha(\alpha-1)(z+k^{\prime *})^{\alpha-2} k^{\prime *} \widehat{k}^\prime_t + \beta^\prime q^* \widehat{q}_{t+1} \\
+  k^* \widehat{k}_t + m k^{\prime *} \widehat{k}^\prime_t = 0
+\end{gather}
+
+ここで，ジャンプ変数と状態変数をそれぞれ
+$\widehat{\boldsymbol{x}}_t = [\widehat{q}_t, \widetilde{\varphi}_t]^\top$，
+$\widehat{\boldsymbol{s}}_t = [\widehat{k}_t, \widehat{b}_t]^\top$
+と定義する．
+
+行列$B$，$C$，$D$を
+\begin{align}
+  B =
+  \begin{bmatrix}
+    0 & 0 & 0 & 0 & 0 \\
+    -1 & 0 & 0 & 0 & 0 \\
+    -[\beta(1+\varphi^*) + \mu^*] q^* & -\beta (a + q^* - \mu^* q^* \beta^\prime) & 0 & 0 & 0 \\
+    -\beta^\prime q^* & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0
+  \end{bmatrix}
+\end{align}
+
+\begin{align}
+  C =
+  \begin{bmatrix}
+    0 & 0 & -q^*k^* & 0 & b^* \\
+    0 & 0 & 1 & 0 & -1 \\
+    -q^*(1+\varphi^*) & (\mu^* \beta^\prime - 1)q^* & 0 & 0 & 0 \\
+    -q^* & 0 & 0 & \beta^\prime \alpha(\alpha-1)(z+k^{\prime *})^{\alpha-2} k^{\prime *} & 0 \\
+    0 & 0 & k^* & m k^{\prime *} & 0
+  \end{bmatrix}
+\end{align}
+
+\begin{align}
+  D =
+  \begin{bmatrix}
+    0 & 0 & (q^* k^* + c k^* + a k^*) - x^* & 0 & -\frac{b^*}{\beta^\prime} \\
+    0 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0 \\
+    0 & 0 & 0 & 0 & 0
+  \end{bmatrix}
+\end{align}
+と定義すると，対数線形近似されたモデルは，
+\begin{align} \label{eq:a}
+  B
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t+1} \\
+    \widehat{\boldsymbol{s}}_{t+1}
+  \end{bmatrix}
+  = C
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t} \\
+    \widehat{\boldsymbol{s}}_{t}
+  \end{bmatrix}
+  + D
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t-1} \\
+    \widehat{\boldsymbol{s}}_{t-1}
+  \end{bmatrix}
+\end{align}
+と書ける．
+
+最終的には，
+\begin{align}
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t+1} \\
+    \widehat{\boldsymbol{s}}_{t+1}
+  \end{bmatrix}
+  = X
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t} \\
+    \widehat{\boldsymbol{s}}_{t}
+  \end{bmatrix}
+\end{align}
+という形式に変形したいが，$B$は特異行列だから，両辺に$B^{-1}$を掛けることができない（仮に正則行列だとしても$[\widehat{\boldsymbol{x}}_{t+n} \ \widehat{\boldsymbol{s}}_{t+n}]^\top$が発散してしまう）．
+
+そこで，任意の次数システムは1次のベクトル差分方程式に書き換えられるから
+\footnote{
+例えば，
+\begin{gather}
+  w_{t+1} = \rho_1 w_t + \rho_2 w_{t-1} + \cdots + \rho_p w_{t-p+1}
+\end{gather}
+は次のように1次のベクトル差分方程式として書き換えることができる(companion form)．
+\begin{gather}
+  \begin{bmatrix}
+    w_{t+1} \\
+    w_t \\
+    \vdots \\
+    w_{t-p+2}
+  \end{bmatrix}
+  -
+  \begin{bmatrix}
+  \rho_1 & \rho_2 & \cdots & \cdots & \rho_p \\
+  1 & 0 & \cdots & \cdots & 0 \\
+  \vdots & \vdots & \ddots & \ddots & \vdots \\
+  0 & 0 & \cdots & 1 & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+  w_t \\
+  w_{t-1} \\
+  \vdots \\
+  w_{t-p+1}
+  \end{bmatrix}
+  = 0
+  \end{gather}
+これを$W_t=[w_{t+1},\, w_t,\, \ldots,\, w_{t-p+2}]^\top$として書き直すと，
+\begin{gather}
+  W_{t+1} - \Pi W_t = 0
+\end{gather}
+となる．
+}
+，\eqref{eq:a}式を
+\begin{align}
+  \Gamma_0
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t+1} \\
+    \widehat{\boldsymbol{s}}_{t+1} \\
+    \widehat{\boldsymbol{x}}_{t} \\
+    \widehat{\boldsymbol{s}}_{t}
+  \end{bmatrix}
+  =
+  \Gamma_1
+  \begin{bmatrix}
+    \widehat{\boldsymbol{x}}_{t} \\
+    \widehat{\boldsymbol{s}}_{t} \\
+    \widehat{\boldsymbol{x}}_{t-1} \\
+    \widehat{\boldsymbol{s}}_{t-1}
+  \end{bmatrix}
+\end{align}
+と書き換える．
+ただし，$I$を単位行列として，
+\begin{align}
+  \Gamma_0 =
+  \begin{bmatrix}
+    B & 0 \\
+    0 & I
+  \end{bmatrix} \\
+  \Gamma_1 =
+  \begin{bmatrix}
+    C & D \\
+    I & 0
+  \end{bmatrix}
+\end{align}
+である．
+さらに，$\widehat{\boldsymbol{X}}_t = [\widehat{\boldsymbol{x}}_t \ \widehat{\boldsymbol{x}}_{t-1}]$，$\widehat{\boldsymbol{S}}_t = [\widehat{\boldsymbol{s}}_t \ \widehat{\boldsymbol{s}}_{t-1}]$と定義して，
+\begin{align} \label{eq:b}
+  \Gamma_0
+  \begin{bmatrix}
+    \widehat{\boldsymbol{X}}_{t+1} \\
+    \widehat{\boldsymbol{S}}_{t+1}
+  \end{bmatrix}
+  =
+  \Gamma_1
+  \begin{bmatrix}
+    \widehat{\boldsymbol{X}}_{t} \\
+    \widehat{\boldsymbol{S}}_{t}
+  \end{bmatrix}
+\end{align}
+と書き換える．
+
+ここで，方策関数が$(2, 3)$型の行列$P$を用いて，
+\begin{equation} \label{eq:d}
+  \widehat{\boldsymbol{X}}_t = P \widehat{\boldsymbol{S}}_t
+\end{equation}
+という関数型をとると仮定する．
+
+そして，パラメータを
+  $
+  \alpha = 1/3,
+  m = 0.5,
+  \bar{K} = 1,
+  \beta^\prime = 0.99,
+  \beta = 0.98,
+  a = 0.7,
+  c = 0.3,
+  z = 0.01
+  $
+と仮置きする．
+
+まず，$A = \Gamma_1^{-1} \Gamma_0$の5個の固有値を並べた対角行列$V$を作る
+\footnote{このとき，どの順序で固有値を対角線上に並べるかには任意性がある．}．
+Dynareで計算すると，
+\begin{align}
+  V =
+  \begin{bmatrix}
+    4.704 \times 10^{-13} & 0 & 0 & 0 \\
+    0 & 0.3194 & 0 & 0 \\
+    0 & 0 & 1.008 & 0 \\
+    0 & 0 & 0 & 1.01
+  \end{bmatrix}
+\end{align}
+となり，各固有値に対応する固有ベクトルを$(5, 5)$型の正方行列$S$を使って$Q=S^{-1}$と定義すると，
+\begin{equation}
+  \begin{split}
+    & Q A Q^{-1} = V =
+    \begin{bmatrix}
+      4.704 \times 10^{-13} & 0 & 0 & 0 \\
+      0 & 0.3194 & 0 & 0 \\
+      0 & 0 & 1.008 & 0 \\
+      0 & 0 & 0 & 1.01
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad A = \Gamma_1^{-1} \Gamma_0 = Q^{-1} V Q
+  \end{split}
+\end{equation}
+と対角化できる．よって，\eqref{eq:b}式は，
+\begin{equation} \label{eq:c}
+  \begin{split}
+    & \Gamma_0
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+1} \\
+      \widehat{\boldsymbol{S}}_{t+1}
+    \end{bmatrix}
+    = \Gamma_1
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t} \\
+      \widehat{\boldsymbol{S}}_{t}
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad \Gamma_1^{-1} \Gamma_0
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+1} \\
+      \widehat{\boldsymbol{S}}_{t+1}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t} \\
+      \widehat{\boldsymbol{S}}_{t}
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad Q_1^{-1} V Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+1} \\
+      \widehat{\boldsymbol{S}}_{t+1}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t} \\
+      \widehat{\boldsymbol{S}}_{t}
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+1} \\
+      \widehat{\boldsymbol{S}}_{t+1}
+    \end{bmatrix}
+    = V^{-1} Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_t \\
+      \widehat{\boldsymbol{S}}_t
+    \end{bmatrix}
+  \end{split}
+\end{equation}
+と変形できる．
+
+Dynareによると，このモデルはBlanchard-Kahn条件を満たしているから，ジャンプ変数に対応する固有値を$V_X$，状態変数に対応する固有値を$V_S$とおき，\eqref{eq:c}式を再帰的に用いると，
+\begin{equation} \label{eq:e}
+  \begin{split}
+    & Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+n} \\
+      \widehat{\boldsymbol{S}}_{t+n}
+    \end{bmatrix}
+    = V^{-1} Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_t \\
+      \widehat{\boldsymbol{S}}_t
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+n} \\
+      \widehat{\boldsymbol{S}}_{t+n}
+    \end{bmatrix}
+    = Q^{-1} V^{-n} Q
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_t \\
+      \widehat{\boldsymbol{S}}_t
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+n} \\
+      \widehat{\boldsymbol{S}}_{t+n}
+    \end{bmatrix}
+    = Q^{-1}
+    \begin{bmatrix}
+      V_X^{-n} & 0 \\
+      0 & V_s^{-n}
+    \end{bmatrix}
+    \begin{bmatrix}
+      Q_A & Q_B \\
+      Q_C & Q_D
+    \end{bmatrix}
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_t \\
+      \widehat{\boldsymbol{S}}_t
+    \end{bmatrix} \\
+    & \Leftrightarrow \qquad
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_{t+n} \\
+      \widehat{\boldsymbol{S}}_{t+n}
+    \end{bmatrix}
+    = Q^{-1}
+    \begin{bmatrix}
+      V_X^{-n} (Q_A \widehat{\boldsymbol{X}}_t + Q_B \widehat{\boldsymbol{s}}_t) \\
+      V_X^{-n} (Q_C \widehat{\boldsymbol{X}}_t + Q_D \widehat{\boldsymbol{s}}_t)
+    \end{bmatrix}
+    \begin{bmatrix}
+      \widehat{\boldsymbol{X}}_t \\
+      \widehat{\boldsymbol{S}}_t
+    \end{bmatrix}
+  \end{split}
+\end{equation}
+となる．
+Blanchard-Kahn条件を満たすには，ジャンプ変数に対応する固有値の絶対値が全て1より小さくないといけないので，$n \rightarrow \infty$のとき$V_X^{-n}$の対角成分は$\pm \infty$に発散する．
+よって，方策関数が\eqref{eq:d}式のように表されるという仮定の下で，$[\widehat{\boldsymbol{X}}_{t+n} \ \widehat{\boldsymbol{S}}_{t+n}]^\top$
+が発散しないための必要十分条件は，
+\begin{equation}
+  Q_A \widehat{\boldsymbol{X}}_t + Q_B \widehat{\boldsymbol{S}}_t = 0
+\end{equation}
+である．
+$Q_A$は正方行列なので，$Q_B \widehat{\boldsymbol{S}}_t$を移行して左から$Q_A^{-1}$を掛けると，
+\begin{align}
+  \begin{split}
+  \widehat{\boldsymbol{X}}_t &= - Q_A^{-1} Q_B \widehat{\boldsymbol{S}}_t \\
+  &= P \widehat{\boldsymbol{S}}_t
+  \end{split}
+\end{align}
+これで方策関数が決まった．
+
+\eqref{eq:e}式は，
+\begin{equation}
+  \begin{split}
+    &Q
+    \begin{bmatrix}
+      \hat{\boldsymbol{x}}_{t+n} \\
+      \hat{\boldsymbol{s}}_{t+n}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      V_z^{-n}(Q_A\hat{\boldsymbol{x}}_t+Q_B\hat{\boldsymbol{s}}_t) \\
+      V_s^{-n}(Q_C\hat{\boldsymbol{x}}_t+Q_D\hat{\boldsymbol{s}}_t)
+    \end{bmatrix}
+    \\
+    &\Leftrightarrow\quad
+    \begin{bmatrix}
+      Q_A & Q_B \\
+      Q_C & Q_D
+    \end{bmatrix}
+    \begin{bmatrix}
+      \hat{\boldsymbol{x}}_{t+n} \\
+      \hat{\boldsymbol{s}}_{t+n}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      0 \\
+      V_s^{-n}(Q_C\hat{\boldsymbol{x}}_t+Q_D\hat{\boldsymbol{s}}_t)
+    \end{bmatrix}
+    \\
+    &\Leftrightarrow\quad
+    \begin{bmatrix}
+      Q_A\hat{\boldsymbol{x}}_{t+n}
+      +Q_B\hat{\boldsymbol{s}}_{t+n}
+      \\
+      Q_C\hat{\boldsymbol{x}}_{t+n}
+      +Q_D\hat{\boldsymbol{s}}_{t+n}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      0 \\
+      V_s^{-n}(Q_C\hat{\boldsymbol{x}}_t+Q_D\hat{\boldsymbol{s}}_t)
+    \end{bmatrix}
+  \end{split}
+\end{equation}
+と書き直すことができ，$n=1$を代入して下側の等号関係を取り出すと，
+\begin{equation}
+  \begin{split}
+    &Q_C\hat{\boldsymbol{x}}_{t+1}
+    +Q_D\hat{\boldsymbol{s}}_{t+1}
+    =
+    V_s^{-1}
+    \left[
+    Q_C\hat{\boldsymbol{x}}_t
+    +
+    Q_D\hat{\boldsymbol{s}}_t
+    \right]
+    \\
+    &\Leftrightarrow\quad
+    \left[
+    Q_CP+Q_D
+    \right]
+    \hat{\boldsymbol{s}}_{t+1}
+    =
+    V_s^{-1}
+    \left[
+    Q_CP+Q_D
+    \right]
+    \hat{\boldsymbol{s}}_t
+    \\
+    &\Leftrightarrow\quad
+    \hat{\boldsymbol{s}}_{t+1}
+    =
+    \left[
+    Q_CP+Q_D
+    \right]^{-1}
+    V_s^{-1}
+    \left[
+    Q_CP+Q_D
+    \right]
+    \hat{\boldsymbol{s}}_t
+    \\
+    &\Leftrightarrow\quad
+    \hat{\boldsymbol{s}}_{t+1}
+    =
+    A_A\hat{\boldsymbol{s}}_t
+  \end{split}
+\end{equation}
+と表現できる．
+
+ジャンプ変数は$\widehat{\boldsymbol{x}}_t = [\widehat{q}_t, \widetilde{\varphi}_t]^\top$，
+状態変数は$\widehat{\boldsymbol{s}}_t = [\widehat{k}_t, \widehat{b}_t]^\top$より，
+$P$と$A_A$をDynareで計算すると，
+\begin{align} \label{eq:recursive}
+  \underbrace{
+    \begin{bmatrix}
+      \widehat{q}_t\\
+      \widetilde{\varphi}_t\\
+      \widetilde{k}_t\\
+      \widetilde{k^\prime}_t\\
+      \widetilde{b}_t
+    \end{bmatrix}
+  }_{\widehat{\boldsymbol{x}}_t}
+  &=
+  \underbrace{
+    \begin{bmatrix}
+      -8.503226 & 8.383462\\
+      225.685881 & -222.507207\\
+      -167.419881 & 165.061855\\
+      900.016392 & -887.340105\\
+      -170.135522 & 167.739247
+    \end{bmatrix}
+  }_{P \ and \ A_A}
+    \underbrace{
+    \begin{bmatrix}
+      \widehat{k}_{t-1}\\
+      \widehat{b}_{t-1}
+    \end{bmatrix}
+  }_{\widehat{\boldsymbol{s}}_t}
+  +
+  \begin{bmatrix}
+    0\\
+    -0.336606\\
+    -22.132062\\
+    118.977618\\
+    -22.355618
+  \end{bmatrix}
+  \varepsilon_t
+\end{align}
+という表現が得られた．
+これがモデルの再帰的表現（モデルの解）である．
+
+\section{考察}
+\subsection*{修正が必要な部分}
+\begin{itemize}
+  \item \eqref{eq:recursive}式の係数の絶対値が大きすぎる
+  \begin{itemize}
+    \item $V$の中の固有値は5つのうち，1つだけが$4.704 \times 10^{-13}$ととてつもなく小さいので，一部のパラメータがおかしいと考えられる
+  \end{itemize}
+\end{itemize}
+
+
+
+
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
